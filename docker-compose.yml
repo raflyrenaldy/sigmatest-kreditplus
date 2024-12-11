@@ -1,0 +1,70 @@
+version: '3'
+services:
+  customer-service:
+    build:
+      context: ./customer
+      dockerfile: Dockerfile
+    ports:
+      - "9092:9092"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - fullstack
+
+  user-service:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    ports:
+      - "9091:9091"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - fullstack
+
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=sigmatech
+      - POSTGRES_PASSWORD=Tez>p#TmiPrN-c6]
+      - POSTGRES_DB=sigmatech
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Named volume for data
+    networks:
+      - fullstack
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "sigmatech"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # MinIO API
+      - "9001:9001"  # MinIO Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio-data:/data  # Named volume for MinIO data
+    restart: unless-stopped
+    networks:
+      - fullstack
+
+volumes:
+  postgres_data:  # Named volume for PostgreSQL data
+  minio-data:     # Named volume for MinIO data
+
+networks:
+  fullstack:
+    driver: bridge

@@ -1,0 +1,43 @@
+.
+├── docker-compose.yml                  ──────────────> Docker Compose File, loading up APP and DB             
+├── Dockerfile                          ──────────────> Docker File, to spin up the docker-compose.yml file
+├── go.mod                              ──────────────> load up all dependencies required in a project
+├── go.sum                              ──────────────> load up cryptographic hashes of exact version of dependencies required in a project
+├── sigmatech                            ──────────────> main root directory of the project
+│   ├── app                             ──────────────> app defined the api middleware and server routes of the project
+│   │   ├── api                         ──────────────> defined middleware of project (bearer token)
+│   │   │   ├── middleware              ──────────────> jwt function written over there, for verify and creating the tokens
+│   │   │   │   ├── auth
+│   │   │   │   └── jwt
+│   │   │   └── server                  ──────────────> load up api router
+│   │   │       ├── router.go           ──────────────> load up the routes 
+│   │   │       └── routes.go           ──────────────> define you routes 
+│   │   ├── constants                   ──────────────> all constants thats used in a project defined here
+│   │   │   ├── constants.go
+│   │   │   └── error_message.go
+│   │   ├── controller                  ──────────────> defined your routes controller here
+│   │   │   ├── healthcheck             ──────────────> to define create a specific package and load up the dependencies classes
+│   │   │   ├── oauth
+│   │   │   ├── response.go
+│   │   │   └── user
+│   │   ├── db                          ──────────────> defined your dataservices layer
+│   │   │   ├── db.go                   ──────────────> spin up your DB and run the migrations on DB
+│   │   │   ├── dto                     ──────────────> defined your DB table schemas
+│   │   │   │   ├── posts               ──────────────> same as controller define a package for each table and use it in repository
+│   │   │   │   └── users
+│   │   │   ├── migrations              ──────────────> define your Up and down migration that is used by the project to run the migration as defined in sql files
+│   │   │   └── repository              ──────────────> define your dataservices clases here 
+│   │   │       ├── post                ──────────────> create a specific package for CRUD operaion using gorm 
+│   │   │       └── user
+│   │   └── service                     ──────────────> here it defined the basic services uses by the projects
+│   │       ├── correlation             ──────────────> its used for give the correlation id on every API request which help us to track down the RCA of each APIs
+│   │       ├── dto                     ──────────────> API request response models defined here
+│   │       │   ├── request
+│   │       │   └── response
+│   │       ├── logger                  ──────────────> defined your logger loggin to file
+│   │       └── util                    ──────────────> define basic function that is used by whole projects like, hashing, time conversion etc
+│   └── config                          ──────────────> load up the configuration from env file
+│       └── config.go
+├── main.go                             ──────────────> heart of the project, its all start from here
+├── Makefile                            ──────────────> here write down the basic shortcode to use it, like make down (stop the project), make start (start the project), make migrations (create new migration file)
+└── README.md                           ──────────────> introduction of the project
