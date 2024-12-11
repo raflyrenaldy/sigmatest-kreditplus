@@ -26,6 +26,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.38.5
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/gin-contrib/timeout v0.0.3
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.2.1

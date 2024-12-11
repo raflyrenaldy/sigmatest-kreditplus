@@ -2,10 +2,14 @@ package server
 
 import (
 	"context"
+	"user/sigmatech/app/api/middleware/auth"
+	"user/sigmatech/app/api/middleware/jwt"
 	timeoutMiddleware "user/sigmatech/app/api/middleware/timeout"
 	"user/sigmatech/app/constants"
 	"user/sigmatech/app/controller/healthcheck"
+	userController "user/sigmatech/app/controller/users"
 	"user/sigmatech/app/db"
+	userDBClient "user/sigmatech/app/db/repository/user"
 
 	"strings"
 	"user/sigmatech/app/service/logger"
@@ -82,9 +86,20 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 	router.Use(uuidInjectionMiddleware())
 	router.Use(timeoutMiddleware.TimeoutMiddleware())
 
+	// DB Clients
+	var (
+		userDBClient = userDBClient.NewUserRepository(dbConnection)
+	)
+
+	// SERVICES
+	var (
+		jwt = jwt.NewJwtService(userDBClient)
+	)
+
 	// Controller
 	var (
 		healthCheckController = healthcheck.NewHealthCheckController()
+		userController        = userController.NewUserController(userDBClient, jwt)
 	)
 
 	// API version v1
@@ -92,6 +107,30 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 	{
 		// Health Check
 		v1.GET(HEALTH_CHECK, healthCheckController.HealthCheck)
+
+		// User routes
+		user := v1.Group(USER)
+		{
+			// Public user sign-up and sign-in routes
+			v1.POST(USER+SIGN_UP+"/", userController.SignUp)
+			v1.POST(USER+SIGN_IN+"/", userController.SignIn)
+			v1.POST(USER+REFRESH_TOKEN+"/", userController.RefreshToken)
+
+			// User profile routes
+			user.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
+			user.GET(PROFILE+"/", userController.GetProfile)
+			user.PATCH(PROFILE+"/", userController.UpdateProfile)
+			user.PATCH(PROFILE_PASSWORD+"/", userController.UpdateProfilePassword)
+
+			// User CRUD routes
+			user.POST("/", userController.CreateUser)
+			user.GET("/", userController.GetUsers)
+			user.GET("/:id/", userController.GetUser)
+			user.PATCH("/:id/", userController.UpdateUser)
+			user.PATCH("/:id/"+PASSWORD+"/", userController.UpdateUserPassword)
+			user.DELETE("/:id/", userController.DeleteUser)
+			user.DELETE("/", userController.DeleteUsers)
+		}
 
 	}
 

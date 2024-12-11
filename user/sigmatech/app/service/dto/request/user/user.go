@@ -2,18 +2,16 @@ package user
 
 import (
 	"fmt"
-	users_DBModels "user/sigmatech/app/db/dto/users"
 	"user/sigmatech/app/service/util"
 )
 
 type CreateUserReq struct {
-	Name       string                `json:"name"`
-	Username   string                `json:"username"`
-	Email      string                `json:"email"`
-	Phone      string                `json:"phone"`
-	Password   string                `json:"password,omitempty"`
-	UserRoleID int                   `json:"user_role_id"`
-	Status     users_DBModels.Status `json:"status"`
+	Name       string `json:"name"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Phone      string `json:"phone"`
+	Password   string `json:"password,omitempty"`
+	UserRoleID int    `json:"user_role_id"`
 }
 
 func (u *CreateUserReq) ValidateUser() error {
@@ -35,9 +33,6 @@ func (u *CreateUserReq) ValidateUser() error {
 	}
 	if u.Password == "" {
 		return fmt.Errorf("password can't be empty")
-	}
-	if u.Status == "" {
-		u.Status = "Active"
 	}
 
 	hashedPassword, err := util.GenerateHash(u.Password)
