@@ -9,10 +9,10 @@ CREATE TABLE IF NOT EXISTS transactions (
     is_done BOOLEAN DEFAULT false,
     otr DECIMAL(15, 2) DEFAULT 0,
     admin_fee DECIMAL(15, 2) DEFAULT 0,
+    total DECIMAL(15, 2) DEFAULT 0,
     installment_amount DECIMAL(15, 2) DEFAULT 0,
     installment_count INTEGER DEFAULT 1,
     total_interest DECIMAL(15, 2) DEFAULT 0,
-    remaining_limit DECIMAL(15, 2) DEFAULT 0,
     created_at timestamp without time zone NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
 );
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS transaction_installments (
     method_payment VARCHAR(255) NULL,
     term INTEGER DEFAULT 1,
     due_date DATE NOT NULL,
-    payment_at DATE NOT NULL,
+    payment_at DATE NULL,
     amount DECIMAL(15, 2) DEFAULT 0,
     amount_paid DECIMAL(15, 2) DEFAULT 0,
     created_at timestamp without time zone NOT NULL DEFAULT NOW(),
