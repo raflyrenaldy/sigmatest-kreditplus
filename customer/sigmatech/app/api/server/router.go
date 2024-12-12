@@ -118,19 +118,26 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 		// Health Check
 		v1.GET(HEALTH_CHECK, healthCheckController.HealthCheck)
 
-		// User routes
-		user := v1.Group(CUSTOMER)
+		// Customer routes
+		customer := v1.Group(CUSTOMER)
 		{
-			// Public user sign-up and sign-in routes
+			// Public customer sign-up and sign-in routes
 			v1.POST(CUSTOMER+SIGN_UP+"/", customerController.SignUp)
 			v1.POST(CUSTOMER+SIGN_IN+"/", customerController.SignIn)
 			v1.POST(CUSTOMER+REFRESH_TOKEN+"/", customerController.RefreshToken)
 
 			// User profile routes
-			user.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
-			user.GET(PROFILE+"/", customerController.GetProfile)
-			user.PATCH(PROFILE+"/", customerController.UpdateProfile)
-			user.PATCH(PROFILE_PASSWORD+"/", customerController.UpdateProfilePassword)
+			customer.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
+			customer.GET(PROFILE+"/", customerController.GetProfile)
+			customer.PATCH(PROFILE+"/", customerController.UpdateProfile)
+			customer.PATCH(PROFILE_PASSWORD+"/", customerController.UpdateProfilePassword)
+
+			// Limit routes
+			limit := customer.Group(LIMIT)
+			{
+				limit.GET("/", customerController.GetLimits)
+			}
+
 		}
 
 	}

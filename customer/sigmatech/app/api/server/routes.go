@@ -6,6 +6,7 @@ const (
 
 	// Customer Routes
 	CUSTOMER = "/customer"
+	LIMIT    = "limit"
 
 	PASSWORD = "password"
 
