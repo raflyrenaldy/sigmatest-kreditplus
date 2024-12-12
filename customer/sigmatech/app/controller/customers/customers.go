@@ -19,6 +19,8 @@ type ICustomerController interface {
 	GetProfile(c *gin.Context)
 	UpdateProfile(c *gin.Context)
 	UpdateProfilePassword(c *gin.Context)
+
+	GetLimits(c *gin.Context)
 }
 
 // CustomerController is a struct that implements the ICustomerController interface.
