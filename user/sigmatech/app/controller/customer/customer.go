@@ -438,8 +438,6 @@ func (u CustomerController) GetCustomerLimits(c *gin.Context) {
 	f := request.ExtractFilteredQueryParams(c, customerLimits_DBModels.CustomerLimit{})
 	f[customerLimits_DBModels.COLUMN_CUSTOMER_UUID] = id
 
-	fmt.Println(f)
-
 	customerLimits, paginationResponse, err := u.CustomerLimitDBClient.GetCustomerLimits(ctx, pagination, f)
 	if err != nil {
 		errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
@@ -502,6 +500,7 @@ func (u CustomerController) ApproveCustomer(c *gin.Context) {
 
 		patcher[customerLimits_DBModels.COLUMN_AMOUNT_LIMIT] = v.Amount
 		patcher[customerLimits_DBModels.COLUMN_REMAINING_LIMIT] = v.Amount
+		patcher[customerLimits_DBModels.COLUMN_STATUS] = true
 		patcher[customerLimits_DBModels.COLUMN_UPDATED_AT] = time.Now()
 
 		filter = fmt.Sprintf("%s='%s'",
