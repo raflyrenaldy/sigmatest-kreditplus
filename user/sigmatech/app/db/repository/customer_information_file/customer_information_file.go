@@ -71,11 +71,6 @@ func (u *CustomerInformationFileRepository) GetCustomerInformationFile(ctx conte
 func (u *CustomerInformationFileRepository) GetCustomerInformationFiles(ctx context.Context, paginationRequest request.Pagination, filter map[string]interface{}) (record []*customerInformationFiles_DBModels.CustomerInformationFile, paginationResponse response.Pagination, err error) {
 	tx := u.DBService.GetDB().Table(customerInformationFiles_DBModels.TABLE_NAME)
 
-	if filter["outlet_id"] != nil {
-		tx = tx.Where("EXISTS (SELECT 1 FROM customer_outlets WHERE customers.id = customer_outlets.customer_id AND customer_outlets.outlet_id = ?)", filter["outlet_id"])
-		delete(filter, "outlet_id") // Remove the filter after using it
-	}
-
 	var columnsToSearch = []string{
 		customerInformationFiles_DBModels.COLUMN_CIF_NUMBER,
 		customerInformationFiles_DBModels.COLUMN_FULL_NAME,

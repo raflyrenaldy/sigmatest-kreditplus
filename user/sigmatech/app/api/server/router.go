@@ -145,7 +145,7 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 		// Customer routes
 		customer := v1.Group(CUSTOMER)
 		{
-			// Customer rout
+			// Customer route
 			customer.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
 			customer.GET("/", customerController.GetCustomers)
 			customer.GET("/"+DETAIL, customerController.GetCustomersDetail)
@@ -154,6 +154,14 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 			customer.PATCH("/:id/"+PASSWORD+"/", customerController.UpdateCustomerPassword)
 			customer.DELETE("/:id/", customerController.DeleteCustomer)
 			customer.DELETE("/", customerController.DeleteCustomers)
+
+			// Customer routes
+			customerLimit := customer.Group(LIMIT)
+			{
+				// Customer Limit route
+				customerLimit.GET("/:id/", customerController.GetCustomerLimits)
+				customerLimit.PATCH(APPROVE+"/", customerController.ApproveCustomer)
+			}
 		}
 
 	}

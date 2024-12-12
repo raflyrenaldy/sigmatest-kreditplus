@@ -68,11 +68,6 @@ func (u *CustomerRepository) GetCustomer(ctx context.Context, whr string) (custo
 func (u *CustomerRepository) GetCustomers(ctx context.Context, paginationRequest request.Pagination, filter map[string]interface{}) (record []*customers_DBModels.Customer, paginationResponse response.Pagination, err error) {
 	tx := u.DBService.GetDB().Table(customers_DBModels.TABLE_NAME)
 
-	if filter["outlet_id"] != nil {
-		tx = tx.Where("EXISTS (SELECT 1 FROM customer_outlets WHERE customers.id = customer_outlets.customer_id AND customer_outlets.outlet_id = ?)", filter["outlet_id"])
-		delete(filter, "outlet_id") // Remove the filter after using it
-	}
-
 	var columnsToSearch = []string{
 		customers_DBModels.COLUMN_NAME,
 		customers_DBModels.COLUMN_EMAIL,

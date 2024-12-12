@@ -9,9 +9,11 @@ const (
 
 	// Customer Routes
 	CUSTOMER = "customer"
+	LIMIT    = "limit"
 
 	DETAIL   = "detail"
 	PASSWORD = "password"
+	APPROVE  = "approve"
 
 	// Authentication Routes
 	SIGN_UP       = "/sign-up"

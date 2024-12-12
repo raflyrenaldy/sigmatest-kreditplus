@@ -7,6 +7,7 @@ import (
 	"user/sigmatech/app/constants"
 	"user/sigmatech/app/controller"
 	cif_DBModels "user/sigmatech/app/db/dto/customer_information_files"
+	customerLimits_DBModels "user/sigmatech/app/db/dto/customer_limits"
 	customers_DBModels "user/sigmatech/app/db/dto/customers"
 	customerDB "user/sigmatech/app/db/repository/customer"
 	cifDB "user/sigmatech/app/db/repository/customer_information_file"
@@ -21,6 +22,8 @@ import (
 	"user/sigmatech/app/service/logger"
 	"user/sigmatech/app/service/util"
 
+	reqCustomer "user/sigmatech/app/service/dto/request/customer"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -34,6 +37,9 @@ type ICustomerController interface {
 	UpdateCustomerPassword(c *gin.Context)
 	DeleteCustomer(c *gin.Context)
 	DeleteCustomers(c *gin.Context)
+
+	GetCustomerLimits(c *gin.Context)
+	ApproveCustomer(c *gin.Context)
 }
 
 // CustomerController is a struct that implements the ICustomerController interface.
@@ -410,4 +416,154 @@ func (u CustomerController) GetCustomersDetail(c *gin.Context) {
 	}
 
 	controller.RespondWithSuccessAndPagination(c, http.StatusOK, constants.GET_SUCCESSFULLY, customerDatas, paginationResponse)
+}
+
+func (u CustomerController) GetCustomerLimits(c *gin.Context) {
+	ctx := correlation.WithReqContext(c)
+	log := logger.Logger(ctx)
+
+	id := c.Param("id")
+
+	var pagination request.Pagination
+
+	if err := c.ShouldBindQuery(&pagination); err != nil {
+		errorMsg := fmt.Sprintf("%s: %v", constants.BAD_REQUEST, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusBadRequest, errorMsg, err)
+		return
+	}
+
+	pagination.Validate()
+
+	f := request.ExtractFilteredQueryParams(c, customerLimits_DBModels.CustomerLimit{})
+	f[customerLimits_DBModels.COLUMN_CUSTOMER_UUID] = id
+
+	fmt.Println(f)
+
+	customerLimits, paginationResponse, err := u.CustomerLimitDBClient.GetCustomerLimits(ctx, pagination, f)
+	if err != nil {
+		errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusInternalServerError, constants.INTERNAL_SERVER_ERROR, err)
+		return
+	}
+
+	controller.RespondWithSuccessAndPagination(c, http.StatusOK, constants.GET_SUCCESSFULLY, customerLimits, paginationResponse)
+}
+
+func (u CustomerController) ApproveCustomer(c *gin.Context) {
+	ctx := correlation.WithReqContext(c)
+	log := logger.Logger(ctx)
+
+	dataFromBody := reqCustomer.ApproveCustomerReq{}
+	err := json.NewDecoder(c.Request.Body).Decode(&dataFromBody)
+	if err != nil {
+		errorMsg := fmt.Sprintf("%s: %v", constants.BAD_REQUEST, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusBadRequest, errorMsg, err)
+		return
+	}
+
+	if err := dataFromBody.Validate(); err != nil {
+		errorMsg := fmt.Sprintf("%s: %v", constants.BAD_REQUEST, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusBadRequest, errorMsg, err)
+		return
+	}
+
+	filter := fmt.Sprintf("%s='%s'",
+		customers_DBModels.COLUM_UUID, dataFromBody.CustomerUuid,
+	)
+
+	r, err := u.CustomerDBClient.GetCustomer(ctx, filter)
+	if err != nil {
+		errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusInternalServerError, constants.INTERNAL_SERVER_ERROR, err)
+		return
+	}
+
+	if r.Uuid == uuid.Nil {
+		errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusInternalServerError, "Customer not found", err)
+		return
+	}
+
+	if *r.IsActive {
+		errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusInternalServerError, "Customer already active", err)
+		return
+	}
+
+	for _, v := range dataFromBody.CustomerLimits {
+		var patcher = make(map[string]interface{})
+
+		patcher[customerLimits_DBModels.COLUMN_AMOUNT_LIMIT] = v.Amount
+		patcher[customerLimits_DBModels.COLUMN_REMAINING_LIMIT] = v.Amount
+		patcher[customerLimits_DBModels.COLUMN_UPDATED_AT] = time.Now()
+
+		filter = fmt.Sprintf("%s='%s'",
+			customerLimits_DBModels.COLUM_UUID, v.Uuid,
+		)
+
+		if err := u.CustomerLimitDBClient.UpdateCustomerLimit(ctx, filter, patcher); err != nil {
+			if constraintName := util.ExtractConstraintName(err.Error()); constraintName != "" {
+				controller.RespondWithError(c, http.StatusConflict, fmt.Sprintf("%s already exists", constraintName), err)
+				return
+			}
+
+			errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
+			log.Error(errorMsg)
+			controller.RespondWithError(c, http.StatusInternalServerError, constants.INTERNAL_SERVER_ERROR, err)
+			return
+		}
+	}
+
+	var patcher = make(map[string]interface{})
+
+	patcher[customers_DBModels.COLUMN_IS_ACTIVE] = true
+	patcher[customers_DBModels.COLUMN_UPDATED_AT] = time.Now()
+
+	filter = fmt.Sprintf("%s='%s'",
+		customers_DBModels.COLUM_UUID, dataFromBody.CustomerUuid,
+	)
+
+	if err := u.CustomerDBClient.UpdateCustomer(ctx, filter, patcher); err != nil {
+		if constraintName := util.ExtractConstraintName(err.Error()); constraintName != "" {
+			controller.RespondWithError(c, http.StatusConflict, fmt.Sprintf("%s already exists", constraintName), err)
+			return
+		}
+
+		errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusInternalServerError, constants.INTERNAL_SERVER_ERROR, err)
+		return
+	}
+
+	var pagination request.Pagination
+	pagination.GetAllData = true
+	pagination.Validate()
+
+	f := request.ExtractFilteredQueryParams(c, customerLimits_DBModels.CustomerLimit{})
+	f[customerLimits_DBModels.COLUMN_CUSTOMER_UUID] = dataFromBody.CustomerUuid.String()
+
+	customerLimits, _, err := u.CustomerLimitDBClient.GetCustomerLimits(ctx, pagination, f)
+	if err != nil {
+		errorMsg := fmt.Sprintf("%s: %v", constants.INTERNAL_SERVER_ERROR, err)
+		log.Error(errorMsg)
+		controller.RespondWithError(c, http.StatusInternalServerError, constants.INTERNAL_SERVER_ERROR, err)
+		return
+	}
+
+	customerDatas := struct {
+		Customer       customers_DBModels.Customer              `json:"customer"`
+		CustomerLimits []*customerLimits_DBModels.CustomerLimit `json:"customer_limits"`
+	}{
+		Customer:       r,
+		CustomerLimits: customerLimits,
+	}
+
+	controller.RespondWithSuccess(c, http.StatusAccepted, constants.UPDATED_SUCCESSFULLY, customerDatas)
 }
