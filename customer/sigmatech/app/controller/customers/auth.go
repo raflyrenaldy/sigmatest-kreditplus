@@ -219,7 +219,7 @@ func (u CustomerController) SignUp(c *gin.Context) {
 
 	cifNumber, err := u.CIFDBClient.GenerateCIFNumber(ctx)
 	if err != nil {
-		cifNumber = fmt.Sprintf("CIF_%06d_%v", 1, time.Now().Unix())
+		cifNumber = fmt.Sprintf("CF_%06d_%v", 1, time.Now().Unix())
 	}
 
 	cifData := cif_DBModels.CustomerInformationFile{

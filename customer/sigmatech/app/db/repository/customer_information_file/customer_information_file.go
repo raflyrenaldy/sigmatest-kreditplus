@@ -209,7 +209,7 @@ func (u *CustomerInformationFileRepository) GenerateCIFNumber(ctx context.Contex
 	var record customerInformationFiles_DBModels.CustomerInformationFile
 	if err := tx.Where(latestData).Order("id DESC").First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Sprintf("CIF_%06d_%v", 1, time.Now().Unix()), nil
+			return fmt.Sprintf("CF_%06d_%v", 1, time.Now().Unix()), nil
 		}
 		return "", err
 	}
@@ -217,13 +217,13 @@ func (u *CustomerInformationFileRepository) GenerateCIFNumber(ctx context.Contex
 	// Extract the numeric part from the last transaction ID (sequence number)
 	var num int
 	var timestamp int64
-	_, err := fmt.Sscanf(record.CifNumber, "CIF_%06d_%d", &num, &timestamp) // Capture both the sequence number and timestamp
+	_, err := fmt.Sscanf(record.CifNumber, "CF_%06d_%d", &num, &timestamp) // Capture both the sequence number and timestamp
 	if err != nil {
 		return "", fmt.Errorf("failed to parse Cif Number: %v", err)
 	}
 	// Increment the transaction number
 	num++
 	// Generate the new transaction ID with the incremented number and the current timestamp
-	newContractNumber := fmt.Sprintf("CIF_%06d_%v", num, time.Now().Unix())
+	newContractNumber := fmt.Sprintf("CF_%06d_%v", num, time.Now().Unix())
 	return newContractNumber, nil
 }

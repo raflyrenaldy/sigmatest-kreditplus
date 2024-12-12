@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS variable_globals (
 CREATE INDEX IF NOT EXISTS idx_variable_globals_code ON variable_globals (code);
 
 INSERT INTO variable_globals (uuid, code, value, description)
-values (gen_random_uuid(), 'ADM', '2.95', 'Admin fee @ percentage')
+values (gen_random_uuid(), 'ADM', '5000', 'Admin fee @ rupiah'),
+       (gen_random_uuid(), 'INT', '2.95', 'interest @ percentage');
 -- +goose StatementEnd
 
 -- +goose Down
