@@ -17,7 +17,7 @@ import (
 )
 
 type IJwtService interface {
-	GenerateUserTokens(ctx context.Context, crmUser users_DBModels.User) (*TokenDetails, error)
+	GenerateUserTokens(ctx context.Context, user users_DBModels.User) (*TokenDetails, error)
 	VerifyUserToken(ctx context.Context, tokenString string) (*users_DBModels.User, bool)
 	RefreshUserToken(ctx context.Context, tokenString string) (*TokenDetails, error)
 	VerifyToken(ctx context.Context, tokenString string) (*users_DBModels.User, bool)
@@ -42,11 +42,11 @@ type TokenDetails struct {
 	RtExpires    int64  `json:"rt_expires"`
 }
 
-func (j *JwtService) GenerateUserTokens(ctx context.Context, crmUser users_DBModels.User) (*TokenDetails, error) {
+func (j *JwtService) GenerateUserTokens(ctx context.Context, user users_DBModels.User) (*TokenDetails, error) {
 	log := logger.Logger(ctx)
-	log.Infof("Creating token for ", crmUser)
+	log.Infof("Creating token for ", user)
 
-	crmUser.Password = ""
+	user.Password = ""
 	var err error
 
 	td := &TokenDetails{}
@@ -56,7 +56,7 @@ func (j *JwtService) GenerateUserTokens(ctx context.Context, crmUser users_DBMod
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = td.AccessUuid
-	atClaims["user"] = crmUser
+	atClaims["user"] = user
 	atClaims["exp"] = td.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 
@@ -66,12 +66,12 @@ func (j *JwtService) GenerateUserTokens(ctx context.Context, crmUser users_DBMod
 	}
 
 	//Creating Refresh Token
-	td.RefreshUuid = td.AccessUuid + "++" + crmUser.Email
+	td.RefreshUuid = td.AccessUuid + "++" + user.Email
 	td.RtExpires = time.Now().Add(time.Minute * time.Duration(constants.Config.JwtConfig.JWT_REFRESH_EXP)).Unix()
 
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid
-	rtClaims["user"] = crmUser
+	rtClaims["user"] = user
 	rtClaims["exp"] = td.RtExpires
 
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
