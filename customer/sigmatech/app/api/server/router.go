@@ -153,7 +153,6 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 		// Transaction routes
 		transaction := v1.Group(TRANSACTION)
 		{
-			// Customer route
 			transaction.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
 			transaction.POST("/", transactionController.CreateTransaction)
 			transaction.GET("/", transactionController.GetTransactions)
