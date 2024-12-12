@@ -24,4 +24,7 @@ const (
 	ACCOUNT          = "/account"
 	PROFILE          = "/profile"
 	PROFILE_PASSWORD = "/profile/password"
+
+	// Transaction Routes
+	TRANSACTION = "transaction"
 )
