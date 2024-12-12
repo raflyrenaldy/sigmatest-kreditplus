@@ -25,7 +25,7 @@ type ICustomerController interface {
 
 // CustomerController is a struct that implements the ICustomerController interface.
 type CustomerController struct {
-	CustomerDBClient      customerDB.ICustomerRepository // customerDB represents the database client for crm-customer-related operations.
+	CustomerDBClient      customerDB.ICustomerRepository // customerDB represents the database client for customer-related operations.
 	CIFDBClient           cifDB.ICustomerInformationFileRepository
 	CustomerLimitDBClient customerLimitDB.ICustomerLimitRepository
 

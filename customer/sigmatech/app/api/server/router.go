@@ -18,6 +18,12 @@ import (
 
 	customerLimitDBClient "customer/sigmatech/app/db/repository/customer_limit"
 
+	variableGlobalDBClient "customer/sigmatech/app/db/repository/variable_global"
+
+	transactionController "customer/sigmatech/app/controller/transaction"
+	transactionDBClient "customer/sigmatech/app/db/repository/transaction"
+	transactionInstallmentDBClient "customer/sigmatech/app/db/repository/transaction_installment"
+
 	"customer/sigmatech/app/service/logger"
 	"strings"
 
@@ -95,9 +101,12 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 
 	// DB Clients
 	var (
-		customerDBClient      = customerDBClient.NewCustomerRepository(dbConnection)
-		cifDBClient           = cifDBClient.NewCustomerInformationFileRepository(dbConnection)
-		customerLimitDBClient = customerLimitDBClient.NewCustomerLimitRepository(dbConnection)
+		customerDBClient               = customerDBClient.NewCustomerRepository(dbConnection)
+		cifDBClient                    = cifDBClient.NewCustomerInformationFileRepository(dbConnection)
+		customerLimitDBClient          = customerLimitDBClient.NewCustomerLimitRepository(dbConnection)
+		variableGlobalDBClient         = variableGlobalDBClient.NewVariableGlobalRepository(dbConnection)
+		transactionDBClient            = transactionDBClient.NewTransactionRepository(dbConnection)
+		transactionInstallmentDBClient = transactionInstallmentDBClient.NewTransactionInstallmentRepository(dbConnection)
 	)
 
 	// SERVICES
@@ -110,6 +119,7 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 	var (
 		healthCheckController = healthcheck.NewHealthCheckController()
 		customerController    = customerController.NewCustomerController(customerDBClient, cifDBClient, customerLimitDBClient, jwt, s3)
+		transactionController = transactionController.NewTransactionController(customerDBClient, customerLimitDBClient, transactionDBClient, transactionInstallmentDBClient, variableGlobalDBClient)
 	)
 
 	// API version v1
@@ -138,6 +148,16 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 				limit.GET("/", customerController.GetLimits)
 			}
 
+		}
+
+		// Transaction routes
+		transaction := v1.Group(TRANSACTION)
+		{
+			// Customer route
+			transaction.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
+			transaction.POST("/", transactionController.CreateTransaction)
+			transaction.GET("/", transactionController.GetTransactions)
+			transaction.GET("/:id/", transactionController.GetTransaction)
 		}
 
 	}

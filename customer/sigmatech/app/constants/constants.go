@@ -43,3 +43,8 @@ const (
 	CUSTOMER_CARD_PHOTO   = "customers/card-photo/"
 	CUSTOMER_SELFIE_PHOTO = "customers/selfie-photo/"
 )
+
+const (
+	VARIABLE_ADMIN_FEE    = "ADM"
+	VARIABLE_INTEREST_FEE = "INT"
+)

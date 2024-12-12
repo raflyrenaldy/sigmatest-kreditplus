@@ -10,6 +10,9 @@ const (
 
 	PASSWORD = "password"
 
+	// Transaction Routes
+	TRANSACTION = "transaction"
+
 	// Authentication Routes
 	SIGN_UP       = "/sign-up"
 	SIGN_IN       = "/sign-in"
