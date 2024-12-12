@@ -69,11 +69,6 @@ func (u *UserRepository) GetUser(ctx context.Context, whr string) (users_DBModel
 func (u *UserRepository) GetUsers(ctx context.Context, paginationRequest request.Pagination, filter map[string]interface{}) (record []*users_DBModels.User, paginationResponse response.Pagination, err error) {
 	tx := u.DBService.GetDB().Table(users_DBModels.TABLE_NAME)
 
-	if filter["outlet_id"] != nil {
-		tx = tx.Where("EXISTS (SELECT 1 FROM user_outlets WHERE users.id = user_outlets.user_id AND user_outlets.outlet_id = ?)", filter["outlet_id"])
-		delete(filter, "outlet_id") // Remove the filter after using it
-	}
-
 	var columnsToSearch = []string{
 		users_DBModels.COLUMN_NAME,
 		users_DBModels.COLUMN_EMAIL,
