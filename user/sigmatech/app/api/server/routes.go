@@ -7,6 +7,9 @@ const (
 	// User Routes
 	USER = "user"
 
+	// Customer Routes
+	CUSTOMER = "customer"
+
 	DETAIL   = "detail"
 	PASSWORD = "password"
 

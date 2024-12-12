@@ -11,6 +11,12 @@ import (
 	"user/sigmatech/app/db"
 	userDBClient "user/sigmatech/app/db/repository/user"
 
+	customerDBClient "user/sigmatech/app/db/repository/customer"
+	cifDBClient "user/sigmatech/app/db/repository/customer_information_file"
+	customerLimitDBClient "user/sigmatech/app/db/repository/customer_limit"
+
+	customerController "user/sigmatech/app/controller/customer"
+
 	"strings"
 	"user/sigmatech/app/service/logger"
 
@@ -88,7 +94,10 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 
 	// DB Clients
 	var (
-		userDBClient = userDBClient.NewUserRepository(dbConnection)
+		userDBClient          = userDBClient.NewUserRepository(dbConnection)
+		customerDBClient      = customerDBClient.NewCustomerRepository(dbConnection)
+		customerLimitDBClient = customerLimitDBClient.NewCustomerLimitRepository(dbConnection)
+		cifDBClient           = cifDBClient.NewCustomerInformationFileRepository(dbConnection)
 	)
 
 	// SERVICES
@@ -100,6 +109,7 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 	var (
 		healthCheckController = healthcheck.NewHealthCheckController()
 		userController        = userController.NewUserController(userDBClient, jwt)
+		customerController    = customerController.NewCustomerController(customerDBClient, customerLimitDBClient, cifDBClient)
 	)
 
 	// API version v1
@@ -130,6 +140,20 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 			user.PATCH("/:id/"+PASSWORD+"/", userController.UpdateUserPassword)
 			user.DELETE("/:id/", userController.DeleteUser)
 			user.DELETE("/", userController.DeleteUsers)
+		}
+
+		// Customer routes
+		customer := v1.Group(CUSTOMER)
+		{
+			// Customer rout
+			customer.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
+			customer.GET("/", customerController.GetCustomers)
+			customer.GET("/"+DETAIL, customerController.GetCustomersDetail)
+			customer.GET("/:id/", customerController.GetCustomer)
+			customer.PATCH("/:id/", customerController.UpdateCustomer)
+			customer.PATCH("/:id/"+PASSWORD+"/", customerController.UpdateCustomerPassword)
+			customer.DELETE("/:id/", customerController.DeleteCustomer)
+			customer.DELETE("/", customerController.DeleteCustomers)
 		}
 
 	}
