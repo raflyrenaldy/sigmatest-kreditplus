@@ -177,6 +177,7 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 		{
 			transaction.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
 			transaction.GET("/", transactionController.GetTransactions)
+			transaction.GET(DETAIL+"/", transactionController.GetTransactionDetails)
 			transaction.GET("/:id/", transactionController.GetTransaction)
 		}
 
