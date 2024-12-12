@@ -7,8 +7,11 @@ import (
 	timeoutMiddleware "user/sigmatech/app/api/middleware/timeout"
 	"user/sigmatech/app/constants"
 	"user/sigmatech/app/controller/healthcheck"
+	transactionController "user/sigmatech/app/controller/transaction"
 	userController "user/sigmatech/app/controller/users"
 	"user/sigmatech/app/db"
+	transactionDBClient "user/sigmatech/app/db/repository/transaction"
+	transactionInstallmentDBClient "user/sigmatech/app/db/repository/transaction_installment"
 	userDBClient "user/sigmatech/app/db/repository/user"
 
 	customerDBClient "user/sigmatech/app/db/repository/customer"
@@ -98,6 +101,9 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 		customerDBClient      = customerDBClient.NewCustomerRepository(dbConnection)
 		customerLimitDBClient = customerLimitDBClient.NewCustomerLimitRepository(dbConnection)
 		cifDBClient           = cifDBClient.NewCustomerInformationFileRepository(dbConnection)
+
+		transactionDBClient            = transactionDBClient.NewTransactionRepository(dbConnection)
+		transactionInstallmentDBClient = transactionInstallmentDBClient.NewTransactionInstallmentRepository(dbConnection)
 	)
 
 	// SERVICES
@@ -110,6 +116,8 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 		healthCheckController = healthcheck.NewHealthCheckController()
 		userController        = userController.NewUserController(userDBClient, jwt)
 		customerController    = customerController.NewCustomerController(customerDBClient, customerLimitDBClient, cifDBClient)
+
+		transactionController = transactionController.NewTransactionController(customerDBClient, customerLimitDBClient, transactionDBClient, transactionInstallmentDBClient)
 	)
 
 	// API version v1
@@ -162,6 +170,14 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 				customerLimit.GET("/:id/", customerController.GetCustomerLimits)
 				customerLimit.PATCH(APPROVE+"/", customerController.ApproveCustomer)
 			}
+		}
+
+		// Transaction routes
+		transaction := v1.Group(TRANSACTION)
+		{
+			transaction.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
+			transaction.GET("/", transactionController.GetTransactions)
+			transaction.GET("/:id/", transactionController.GetTransaction)
 		}
 
 	}
