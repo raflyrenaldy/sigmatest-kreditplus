@@ -35,6 +35,8 @@ func GenerateHash(password string) (string, error) {
 
 func Int(v int) *int { return &v }
 
+func Boolean(v bool) *bool { return &v }
+
 func UnwrapInt(v *int) int {
 	if v == nil {
 		return 0

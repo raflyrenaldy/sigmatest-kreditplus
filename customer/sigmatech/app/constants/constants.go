@@ -38,3 +38,8 @@ var (
 func (c ENVIRONMENT) String() string {
 	return string(c)
 }
+
+const (
+	CUSTOMER_CARD_PHOTO   = "customers/card-photo/"
+	CUSTOMER_SELFIE_PHOTO = "customers/selfie-photo/"
+)

@@ -2,10 +2,21 @@ package server
 
 import (
 	"context"
+	"customer/sigmatech/app/api/middleware/auth"
+	"customer/sigmatech/app/api/middleware/jwt"
 	timeoutMiddleware "customer/sigmatech/app/api/middleware/timeout"
 	"customer/sigmatech/app/constants"
 	"customer/sigmatech/app/controller/healthcheck"
 	"customer/sigmatech/app/db"
+
+	awsS3 "customer/sigmatech/app/service/aws/s3"
+
+	customerController "customer/sigmatech/app/controller/customers"
+	customerDBClient "customer/sigmatech/app/db/repository/customer"
+
+	cifDBClient "customer/sigmatech/app/db/repository/customer_information_file"
+
+	customerLimitDBClient "customer/sigmatech/app/db/repository/customer_limit"
 
 	"customer/sigmatech/app/service/logger"
 	"strings"
@@ -82,9 +93,23 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 	router.Use(uuidInjectionMiddleware())
 	router.Use(timeoutMiddleware.TimeoutMiddleware())
 
+	// DB Clients
+	var (
+		customerDBClient      = customerDBClient.NewCustomerRepository(dbConnection)
+		cifDBClient           = cifDBClient.NewCustomerInformationFileRepository(dbConnection)
+		customerLimitDBClient = customerLimitDBClient.NewCustomerLimitRepository(dbConnection)
+	)
+
+	// SERVICES
+	var (
+		jwt = jwt.NewJwtService(customerDBClient)
+		s3  = awsS3.NewS3Service()
+	)
+
 	// Controller
 	var (
 		healthCheckController = healthcheck.NewHealthCheckController()
+		customerController    = customerController.NewCustomerController(customerDBClient, cifDBClient, customerLimitDBClient, jwt, s3)
 	)
 
 	// API version v1
@@ -92,6 +117,21 @@ func NewRouter(ctx context.Context, dbConnection *db.DBService) *gin.Engine {
 	{
 		// Health Check
 		v1.GET(HEALTH_CHECK, healthCheckController.HealthCheck)
+
+		// User routes
+		user := v1.Group(CUSTOMER)
+		{
+			// Public user sign-up and sign-in routes
+			v1.POST(CUSTOMER+SIGN_UP+"/", customerController.SignUp)
+			v1.POST(CUSTOMER+SIGN_IN+"/", customerController.SignIn)
+			v1.POST(CUSTOMER+REFRESH_TOKEN+"/", customerController.RefreshToken)
+
+			// User profile routes
+			user.Use(auth.Authentication(jwt)) // pass allowed roles for the APIs
+			user.GET(PROFILE+"/", customerController.GetProfile)
+			user.PATCH(PROFILE+"/", customerController.UpdateProfile)
+			user.PATCH(PROFILE_PASSWORD+"/", customerController.UpdateProfilePassword)
+		}
 
 	}
 
